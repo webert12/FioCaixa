@@ -20,13 +20,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Dar permissão Gradle
+      - name: Dar permissão ao Gradle
         run: chmod +x gradlew
 
       - name: Compilar APK
         run: ./gradlew assembleDebug
 
-      - name: Salvar APK
+      - name: Enviar APK
         uses: actions/upload-artifact@v4
         with:
           name: FioCaixa-debug
