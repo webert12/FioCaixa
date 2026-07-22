@@ -26,14 +26,13 @@ public class MainActivity extends AppCompatActivity {
     private boolean isSplashHidden = false;
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         FrameLayout rootLayout = new FrameLayout(this);
 
         // Configuração do WebView
         webView = new WebView(this);
-
         WebSettings webSettings = webView.getSettings();
 
         webSettings.setJavaScriptEnabled(true);
@@ -45,7 +44,6 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         webSettings.setSupportMultipleWindows(true);
 
-
         // Controle de links dentro do WebView
         webView.setWebViewClient(new WebViewClient() {
 
@@ -54,64 +52,20 @@ public class MainActivity extends AppCompatActivity {
                 return abrirLink(request.getUrl().toString());
             }
 
-
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 return abrirLink(url);
             }
 
-
-            private boolean abrirLink(String url) {
-
-                // WhatsApp
-                if (url.startsWith("https://wa.me")
-                        || url.startsWith("https://api.whatsapp.com")
-                        || url.startsWith("whatsapp://")) {
-
-                    try {
-                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                        startActivity(intent);
-                        return true;
-
-                    } catch (Exception e) {
-                        return false;
-                    }
-                }
-
-
-                // Telefone, Email e Maps
-                if (url.startsWith("tel:")
-                        || url.startsWith("mailto:")
-                        || url.startsWith("geo:")) {
-
-                    try {
-                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                        startActivity(intent);
-                        return true;
-
-                    } catch (Exception e) {
-                        return false;
-                    }
-                }
-
-
-                return false;
-            }
-            
-
-
             @Override
             public void onPageFinished(WebView view, String url) {
-
                 super.onPageFinished(view, url);
 
-
-                // Remove elementos do Streamlit
+                // CSS injetado para ocultar a interface padrão do Streamlit
                 String js =
                         "var style = document.createElement('style'); " +
                         "style.type='text/css'; " +
                         "style.innerHTML='" +
-
                         "header, footer, #MainMenu," +
                         "[data-testid=\"stHeader\"]," +
                         "[data-testid=\"stToolbar\"]," +
@@ -126,7 +80,6 @@ public class MainActivity extends AppCompatActivity {
                         "visibility:hidden!important;" +
                         "height:0!important;" +
                         "}';" +
-
                         "document.head.appendChild(style);" +
 
                         "setInterval(function(){" +
@@ -135,148 +88,116 @@ public class MainActivity extends AppCompatActivity {
                         "[data-testid=\"stToolbar\"]," +
                         "div[class*=\"stAppToolbar\"]," +
                         "div[class*=\"viewerBadge\"]');" +
-
                         "elements.forEach(function(el){" +
                         "el.style.display='none';" +
                         "});" +
-
                         "},200);";
 
-
                 view.evaluateJavascript(js, null);
-
                 hideSplash();
             }
         });
-                // Permite abertura de janelas e links externos
+
+        // Suporte a abertura de janelas popup e links externos
         webView.setWebChromeClient(new WebChromeClient() {
-
-    @Override
-    public boolean onCreateWindow(WebView view,
-                                  boolean isDialog,
-                                  boolean isUserGesture,
-                                  android.os.Message resultMsg) {
-
-        WebView tempWebView = new WebView(MainActivity.this);
-
-        tempWebView.setWebViewClient(new WebViewClient(){
-
             @Override
-            public boolean shouldOverrideUrlLoading(WebView v, String url){
+            public boolean onCreateWindow(WebView view,
+                                          boolean isDialog,
+                                          boolean isUserGesture,
+                                          android.os.Message resultMsg) {
 
-                abrirLinkExterno(url);
+                WebView tempWebView = new WebView(MainActivity.this);
+
+                tempWebView.setWebViewClient(new WebViewClient() {
+                    @Override
+                    public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest request) {
+                        abrirLinkExterno(request.getUrl().toString());
+                        return true;
+                    }
+
+                    @Override
+                    public boolean shouldOverrideUrlLoading(WebView v, String url) {
+                        abrirLinkExterno(url);
+                        return true;
+                    }
+                });
+
+                WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
+                transport.setWebView(tempWebView);
+                resultMsg.sendToTarget();
 
                 return true;
             }
-
         });
 
-
-        WebView.WebViewTransport transport =
-                (WebView.WebViewTransport) resultMsg.obj;
-
-        transport.setWebView(tempWebView);
-
-        resultMsg.sendToTarget();
-
-        return true;
-    }
-});
-
-        // Tela Splash
+        // Configuração da Splash Screen
         splashImage = new ImageView(this);
-
         splashImage.setImageResource(R.drawable.logo);
         splashImage.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         splashImage.setBackgroundColor(Color.WHITE);
 
-
-
         rootLayout.addView(webView);
         rootLayout.addView(splashImage);
 
-
         setContentView(rootLayout);
 
+        // Carrega a URL do Streamlit
+        webView.loadUrl("https://financassalao-blazvouwtjau5y667nrlrd.streamlit.app/?embed=true");
 
-
-        // URL do Streamlit dentro do APK
-        webView.loadUrl(
-                "https://financassalao-blazvouwtjau5y667nrlrd.streamlit.app/?embed=true"
-        );
-
-
-       private void abrirLinkExterno(String url){
-
-    try {
-
-        if(url.startsWith("https://wa.me")
-                || url.startsWith("https://api.whatsapp.com")
-                || url.startsWith("whatsapp://")){
-
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setData(Uri.parse(url));
-            startActivity(intent);
-
-        }else{
-
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setData(Uri.parse(url));
-            startActivity(intent);
-
-        }
-
-    }catch(Exception e){
-
-    }
-
-        }
-        // Remove splash após carregamento
+        // Timeout de segurança para remover a Splash Screen após 4 segundos
         new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-
             @Override
             public void run() {
-
                 hideSplash();
-
             }
-
-        },4000);
-
+        }, 4000);
     }
 
+    // Trata links de redes sociais, telefone e mapas
+    private boolean abrirLink(String url) {
+        if (url.startsWith("https://wa.me")
+                || url.startsWith("https://api.whatsapp.com")
+                || url.startsWith("whatsapp://")
+                || url.startsWith("tel:")
+                || url.startsWith("mailto:")
+                || url.startsWith("geo:")) {
 
-
-    private void hideSplash() {
-
-        if (splashImage != null && !isSplashHidden) {
-
-            isSplashHidden = true;
-
-            splashImage.setVisibility(View.GONE);
-
+            try {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                startActivity(intent);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
         }
-
+        return false;
     }
 
+    // Trata a abertura de links externos criados por novas janelas
+    private void abrirLinkExterno(String url) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            startActivity(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
+    // Oculta a tela de Splash
+    private void hideSplash() {
+        if (splashImage != null && !isSplashHidden) {
+            isSplashHidden = true;
+            splashImage.setVisibility(View.GONE);
+        }
+    }
 
+    // Trata o botão de voltar do dispositivo
     @Override
     public void onBackPressed() {
-
         if (webView != null && webView.canGoBack()) {
-
             webView.goBack();
-
         } else {
-
             super.onBackPressed();
-
         }
-
     }
-
 }
-
-        
-
