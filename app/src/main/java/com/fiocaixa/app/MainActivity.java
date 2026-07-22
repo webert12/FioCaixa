@@ -35,28 +35,30 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setSupportZoom(false);
         webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
-        // Configura o comportamento ao carregar
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
 
-                // CSS REFORÇADO: Esconde o cabeçalho, botão Fork, ícone do GitHub, 3 pontinhos e rodapé do Streamlit
-                String css = "header, footer, #MainMenu, " +
-                             "[data-testid=\"stHeader\"], " +
-                             "[data-testid=\"stToolbar\"], " +
-                             "[data-testid=\"stStatusWidget\"], " +
-                             "[data-testid=\"stDecoration\"], " +
-                             "div[class*=\"stAppToolbar\"], " +
-                             "div[class*=\"viewerBadge\"], " +
-                             "div[class*=\"styles_viewerBadge\"], " +
-                             ".viewerBadge_link, " +
-                             ".stApp > header { display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }";
-
+                // Injeta um loop contínuo que monitora a tela e elimina qualquer elemento do Streamlit/GitHub que tente aparecer
                 String js = "var style = document.createElement('style'); " +
                             "style.type = 'text/css'; " +
-                            "style.innerHTML = '" + css + "'; " +
-                            "document.head.appendChild(style);";
+                            "style.innerHTML = '" +
+                            "  header, footer, #MainMenu, " +
+                            "  [data-testid=\"stHeader\"], " +
+                            "  [data-testid=\"stToolbar\"], " +
+                            "  [data-testid=\"stStatusWidget\"], " +
+                            "  [data-testid=\"stDecoration\"], " +
+                            "  div[class*=\"stAppToolbar\"], " +
+                            "  div[class*=\"viewerBadge\"], " +
+                            "  div[class*=\"styles_viewerBadge\"], " +
+                            "  .viewerBadge_link, " +
+                            "  .stApp > header { display: none !important; visibility: hidden !important; height: 0 !important; }'; " +
+                            "document.head.appendChild(style); " +
+                            "setInterval(function() { " +
+                            "  var elements = document.querySelectorAll('header, footer, [data-testid=\"stHeader\"], [data-testid=\"stToolbar\"], div[class*=\"stAppToolbar\"], div[class*=\"viewerBadge\"]'); " +
+                            "  elements.forEach(function(el) { el.style.display = 'none'; }); " +
+                            "}, 200);";
 
                 view.evaluateJavascript(js, null);
 
@@ -64,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // 2. Tela de Capa / Splash Screen com a sua Logo
+        // 2. Splash Screen
         splashImage = new ImageView(this);
         splashImage.setImageResource(R.drawable.logo);
         splashImage.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
@@ -75,10 +77,10 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(rootLayout);
 
-        // Carrega a URL oficial do seu Streamlit
-        webView.loadUrl("https://financassalao-blazvouwtjau5y667nrlrd.streamlit.app/");
+        // ⚠️ O SEGREDO: ?embed=true no final da URL remove nativamente o topo e rodapé do Streamlit
+        webView.loadUrl("https://financassalao-blazvouwtjau5y667nrlrd.streamlit.app/?embed=true");
 
-        // Trava de segurança: remove a logo após 4 segundos
+        // Trava de segurança para remover a capa após 4 segundos
         new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
             @Override
             public void run() {
