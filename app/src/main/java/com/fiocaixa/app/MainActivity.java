@@ -17,6 +17,7 @@ import android.webkit.WebViewClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceError;
 import android.webkit.WebChromeClient;
+import android.webkit.ValueCallback;
 
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -30,11 +31,13 @@ public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
     private ImageView splashImage;
+
     private boolean isSplashHidden = false;
 
 
     private static final String APP_URL =
             "https://fioecaixa.onrender.com";
+
 
 
     @Override
@@ -43,76 +46,75 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
 
+
         FrameLayout rootLayout = new FrameLayout(this);
 
 
 
         webView = new WebView(this);
 
-        WebSettings webSettings = webView.getSettings();
+
+        WebSettings settings =
+                webView.getSettings();
 
 
-        webSettings.setJavaScriptEnabled(true);
+        settings.setJavaScriptEnabled(true);
 
-        webSettings.setDomStorageEnabled(true);
+        settings.setDomStorageEnabled(true);
 
-        webSettings.setDatabaseEnabled(true);
+        settings.setDatabaseEnabled(true);
 
+        settings.setJavaScriptCanOpenWindowsAutomatically(true);
 
-        // Permite arquivos e downloads
-        webSettings.setAllowFileAccess(true);
+        settings.setSupportMultipleWindows(true);
 
-        webSettings.setAllowContentAccess(true);
+        settings.setAllowFileAccess(true);
 
-
-        // Permite janelas abertas pelo Streamlit
-        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+        settings.setAllowContentAccess(true);
 
 
-
-        // Sempre busca dados atualizados do servidor
-        webSettings.setCacheMode(
+        // Atualiza sempre o sistema online
+        settings.setCacheMode(
                 WebSettings.LOAD_NO_CACHE
         );
 
 
-        webSettings.setBuiltInZoomControls(false);
+        settings.setBuiltInZoomControls(false);
 
-        webSettings.setDisplayZoomControls(false);
+        settings.setDisplayZoomControls(false);
 
-        webSettings.setSupportZoom(false);
+        settings.setSupportZoom(false);
 
 
-        webSettings.setMixedContentMode(
+        settings.setMixedContentMode(
                 WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
         );
 
 
-        webSettings.setSupportMultipleWindows(true);
 
-
-
-        CookieManager cookieManager =
+        CookieManager cookies =
                 CookieManager.getInstance();
 
 
-        cookieManager.setAcceptCookie(true);
+        cookies.setAcceptCookie(true);
 
-        cookieManager.setAcceptThirdPartyCookies(
+        cookies.setAcceptThirdPartyCookies(
                 webView,
                 true
         );
 
 
 
-        webView.setWebViewClient(new WebViewClient() {
+        webView.setWebViewClient(
+                new WebViewClient(){
+
 
 
             @Override
             public boolean shouldOverrideUrlLoading(
                     WebView view,
                     WebResourceRequest request
-            ) {
+            ){
 
                 return abrirLink(
                         request.getUrl().toString()
@@ -126,11 +128,12 @@ public class MainActivity extends AppCompatActivity {
             public boolean shouldOverrideUrlLoading(
                     WebView view,
                     String url
-            ) {
+            ){
 
                 return abrirLink(url);
 
             }
+
 
 
 
@@ -139,18 +142,15 @@ public class MainActivity extends AppCompatActivity {
                     WebView view,
                     WebResourceRequest request,
                     WebResourceError error
-            ) {
-
+            ){
 
                 if(request.isForMainFrame()){
 
-
                     Toast.makeText(
                             MainActivity.this,
-                            "Erro ao carregar o sistema. Verifique sua internet.",
+                            "Erro ao carregar sistema",
                             Toast.LENGTH_LONG
                     ).show();
-
 
                 }
 
@@ -158,70 +158,100 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
+
             @Override
             public void onPageFinished(
                     WebView view,
                     String url
-            ) {
+            ){
 
-
-                super.onPageFinished(
-                        view,
-                        url
-                );
+                super.onPageFinished(view,url);
 
 
 
-                String js =
+                // Remove elementos do Streamlit
+                String javascript =
 
-                        "var style=document.createElement('style');"
+                "var css=document.createElement('style');"
 
-                        +
+                +
 
-                        "style.innerHTML='"
+                "css.innerHTML='"
 
-                        +
+                +
 
-                        "header,footer,#MainMenu,"
+                "header,footer,#MainMenu,"
 
-                        +
+                +
 
-                        "[data-testid=\"stHeader\"],"
+                "[data-testid=\"stHeader\"],"
 
-                        +
+                +
 
-                        "[data-testid=\"stToolbar\"],"
+                "[data-testid=\"stToolbar\"],"
 
-                        +
+                +
 
-                        "[data-testid=\"stStatusWidget\"],"
+                "[data-testid=\"stDecoration\"],"
 
-                        +
+                +
 
-                        "[data-testid=\"stDecoration\"],"
+                "div[class*=\"viewerBadge\"]"
 
-                        +
+                +
 
-                        "div[class*=\"viewerBadge\"],"
+                "{display:none!important;}';"
 
-                        +
+                +
 
-                        "div[class*=\"stAppToolbar\"]"
-
-                        +
-
-                        "{display:none!important;visibility:hidden!important;}';"
-
-                        +
-
-                        "document.head.appendChild(style);";
+                "document.head.appendChild(css);";
 
 
 
                 view.evaluateJavascript(
-                        js,
+                        javascript,
                         null
                 );
+
+
+
+                // Captura links WhatsApp criados pelo Streamlit
+
+                view.evaluateJavascript(
+
+                "document.querySelectorAll('a').forEach(function(a){"
+
+                +
+
+                "a.onclick=function(){"
+
+                +
+
+                "if(a.href.includes('whatsapp')){"
+
+                +
+
+                "Android.openWhatsApp(a.href);"
+
+                +
+
+                "return false;"
+
+                +
+
+                "}"
+
+                +
+
+                "}"
+
+                +
+
+                "});",
+
+
+                null);
 
 
 
@@ -234,8 +264,10 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        webView.setWebChromeClient(
-                new WebChromeClient()
+
+        webView.addJavascriptInterface(
+                new WebAppInterface(this),
+                "Android"
         );
 
 
@@ -276,16 +308,7 @@ public class MainActivity extends AppCompatActivity {
         new Handler(
                 Looper.getMainLooper()
         ).postDelayed(
-                new Runnable() {
-
-                    @Override
-                    public void run() {
-
-                        hideSplash();
-
-                    }
-
-                },
+                () -> hideSplash(),
                 4000
         );
 
@@ -294,46 +317,18 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean abrirLink(String url) {
 
+
         try {
 
 
             // WhatsApp
-            if (url.startsWith("https://wa.me")
-                    || url.startsWith("https://api.whatsapp.com")
+            if (url.contains("whatsapp.com")
+                    || url.contains("wa.me")
                     || url.startsWith("whatsapp://")) {
 
 
-                Intent intent = new Intent(
-                        Intent.ACTION_VIEW
-                );
 
-
-                intent.setData(
-                        Uri.parse(url)
-                );
-
-
-                intent.setPackage(
-                        "com.whatsapp"
-                );
-
-
-                try {
-
-                    startActivity(intent);
-
-                } catch (ActivityNotFoundException e) {
-
-
-                    Intent fallback = new Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse(url)
-                    );
-
-
-                    startActivity(fallback);
-
-                }
+                abrirWhatsApp(url);
 
 
                 return true;
@@ -342,51 +337,18 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-            // Compartilhamento Android
-            if (url.startsWith("share:")
-                    || url.contains("intent://")) {
-
-
-                Intent shareIntent = new Intent(
-                        Intent.ACTION_SEND
-                );
-
-
-                shareIntent.setType(
-                        "text/plain"
-                );
-
-
-                shareIntent.putExtra(
-                        Intent.EXTRA_TEXT,
-                        url
-                );
-
-
-                startActivity(
-                        Intent.createChooser(
-                                shareIntent,
-                                "Compartilhar usando"
-                        )
-                );
-
-
-                return true;
-
-            }
-
-
-
-            // Telefone, e-mail e localização
+            // Links externos
             if (url.startsWith("tel:")
                     || url.startsWith("mailto:")
                     || url.startsWith("geo:")) {
 
 
-                Intent intent = new Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse(url)
-                );
+
+                Intent intent =
+                        new Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse(url)
+                        );
 
 
                 startActivity(intent);
@@ -397,11 +359,46 @@ public class MainActivity extends AppCompatActivity {
             }
 
 
-        } catch(Exception e) {
+
+            // Intent Android
+            if (url.startsWith("intent://")) {
+
+
+                try {
+
+
+                    Intent intent =
+                            Intent.parseUri(
+                                    url,
+                                    Intent.URI_INTENT_SCHEME
+                            );
+
+
+                    startActivity(intent);
+
+
+                } catch(Exception e){
+
+
+                    e.printStackTrace();
+
+                }
+
+
+
+                return true;
+
+            }
+
+
+
+        } catch(Exception e){
+
 
             e.printStackTrace();
 
         }
+
 
 
         return false;
@@ -410,43 +407,124 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    private void abrirLinkExterno(String url) {
+
+    private void abrirWhatsApp(String url){
 
 
         try {
 
 
-            Intent intent = new Intent(
-                    Intent.ACTION_VIEW,
+
+            Intent intent =
+                    new Intent(
+                            Intent.ACTION_VIEW
+                    );
+
+
+            intent.setData(
                     Uri.parse(url)
             );
+
+
+
+            intent.setPackage(
+                    "com.whatsapp"
+            );
+
 
 
             startActivity(intent);
 
 
 
-        } catch(Exception e) {
+        } catch(ActivityNotFoundException e){
 
 
-            e.printStackTrace();
+
+            try {
+
+
+                Intent navegador =
+                        new Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse(url)
+                        );
+
+
+                startActivity(navegador);
+
+
+
+            } catch(Exception erro){
+
+
+                Toast.makeText(
+                        this,
+                        "WhatsApp não encontrado",
+                        Toast.LENGTH_LONG
+                ).show();
+
+
+            }
 
 
         }
+
 
     }
 
 
 
 
-    private void hideSplash() {
+    public class WebAppInterface {
+
+
+        MainActivity activity;
+
+
+
+        WebAppInterface(
+                MainActivity activity
+        ){
+
+            this.activity = activity;
+
+        }
+
+
+
+        @android.webkit.JavascriptInterface
+        public void openWhatsApp(String url){
+
+
+            activity.runOnUiThread(
+                    () -> {
+
+                        abrirWhatsApp(url);
+
+                    }
+            );
+
+
+        }
+
+
+    }
+
+
+
+
+
+    private void hideSplash(){
 
 
         if(splashImage != null
-                && !isSplashHidden) {
+                && !isSplashHidden){
+
 
 
             isSplashHidden = true;
+
 
 
             splashImage.setVisibility(
@@ -455,29 +533,32 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
+
     }
 
 
 
 
+
     @Override
-    public void onBackPressed() {
+    public void onBackPressed(){
 
 
         if(webView != null
-                && webView.canGoBack()) {
+                && webView.canGoBack()){
 
 
             webView.goBack();
 
 
-        } else {
+        }else{
 
 
             super.onBackPressed();
 
 
         }
+
 
     }
 
