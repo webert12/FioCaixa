@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.net.Uri;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebChromeClient;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -86,6 +87,22 @@ public class MainActivity extends AppCompatActivity {
 
         return false;
     }
+            webView.setWebChromeClient(new WebChromeClient() {
+    @Override
+    public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, android.os.Message resultMsg) {
+
+        WebView.HitTestResult result = view.getHitTestResult();
+
+        String data = result.getExtra();
+
+        if (data != null) {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(data));
+            startActivity(intent);
+        }
+
+        return false;
+    }
+});
 
     @Override
     public void onPageFinished(WebView view, String url) {
