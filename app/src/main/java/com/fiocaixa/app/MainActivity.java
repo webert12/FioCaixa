@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
         webSettings.setDatabaseEnabled(true);
-        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT); // Melhora o tempo de carregamento
+        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
         webSettings.setBuiltInZoomControls(false);
         webSettings.setDisplayZoomControls(false);
         webSettings.setSupportZoom(false);
@@ -63,9 +63,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 super.onReceivedError(view, request, error);
-                // Evita que erros em recursos secundários (imagens/scripts) travem a tela
                 if (request.isForMainFrame()) {
-                    Toast.makeText(MainActivity.hashCode(), "Erro ao carregar. Verifique sua conexão.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, "Erro ao carregar. Verifique sua conexão.", Toast.LENGTH_LONG).show();
                 }
             }
 
@@ -73,7 +72,6 @@ public class MainActivity extends AppCompatActivity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
 
-                // Oculta barras do Streamlit via CSS sem necessitar de loop contínuo
                 String js =
                         "var style = document.createElement('style'); " +
                         "style.type='text/css'; " +
@@ -132,8 +130,13 @@ public class MainActivity extends AppCompatActivity {
         // Carrega o app Streamlit
         webView.loadUrl("https://financassalao-blazvouwtjau5y667nrlrd.streamlit.app/?embed=true");
 
-        // Timeout limite para ocultar a splash screen
-        new Handler(Looper.getMainLooper()).postDelayed(this::hideSplash, 4000);
+        // Handler compatível com Java 7/8
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                hideSplash();
+            }
+        }, 4000);
     }
 
     private boolean abrirLink(String url) {
