@@ -43,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setDisplayZoomControls(false);
         webSettings.setSupportZoom(false);
         webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        webSettings.setSupportMultipleWindows(true);
 
 
         // Controle de links dentro do WebView
@@ -96,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
 
                 return false;
             }
+            
 
 
             @Override
@@ -149,34 +151,37 @@ public class MainActivity extends AppCompatActivity {
                 // Permite abertura de janelas e links externos
         webView.setWebChromeClient(new WebChromeClient() {
 
+    @Override
+    public boolean onCreateWindow(WebView view,
+                                  boolean isDialog,
+                                  boolean isUserGesture,
+                                  android.os.Message resultMsg) {
+
+        WebView tempWebView = new WebView(MainActivity.this);
+
+        tempWebView.setWebViewClient(new WebViewClient(){
+
             @Override
-            public boolean onCreateWindow(WebView view,
-                                          boolean isDialog,
-                                          boolean isUserGesture,
-                                          android.os.Message resultMsg) {
+            public boolean shouldOverrideUrlLoading(WebView v, String url){
 
-                WebView.HitTestResult result = view.getHitTestResult();
+                abrirLinkExterno(url);
 
-                String data = result.getExtra();
-
-                if (data != null) {
-
-                    try {
-
-                        Intent intent = new Intent(Intent.ACTION_VIEW);
-                        intent.setData(Uri.parse(data));
-                        startActivity(intent);
-
-                    } catch (Exception e) {
-
-                    }
-                }
-
-                return false;
+                return true;
             }
+
         });
 
 
+        WebView.WebViewTransport transport =
+                (WebView.WebViewTransport) resultMsg.obj;
+
+        transport.setWebView(tempWebView);
+
+        resultMsg.sendToTarget();
+
+        return true;
+    }
+});
 
         // Tela Splash
         splashImage = new ImageView(this);
@@ -201,7 +206,31 @@ public class MainActivity extends AppCompatActivity {
         );
 
 
+       private void abrirLinkExterno(String url){
 
+    try {
+
+        if(url.startsWith("https://wa.me")
+                || url.startsWith("https://api.whatsapp.com")
+                || url.startsWith("whatsapp://")){
+
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(Uri.parse(url));
+            startActivity(intent);
+
+        }else{
+
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(Uri.parse(url));
+            startActivity(intent);
+
+        }
+
+    }catch(Exception e){
+
+    }
+
+        }
         // Remove splash após carregamento
         new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
 
