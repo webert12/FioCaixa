@@ -8,6 +8,7 @@ import android.view.View;
 import android.content.Intent;
 import android.net.Uri;
 
+import android.webkit.CookieManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -40,12 +41,20 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
         webSettings.setDatabaseEnabled(true);
-        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        
+        // DESATIVAR CACHE: Força o Android a buscar dados novos no servidor Streamlit
+        webSettings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+        
         webSettings.setBuiltInZoomControls(false);
         webSettings.setDisplayZoomControls(false);
         webSettings.setSupportZoom(false);
         webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         webSettings.setSupportMultipleWindows(true);
+
+        // Permite cookies para manter a sessão e sincronização do Streamlit ativas
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.setAcceptCookie(true);
+        cookieManager.setAcceptThirdPartyCookies(webView, true);
 
         // Controle de navegação e erros
         webView.setWebViewClient(new WebViewClient() {
@@ -72,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
 
+                // CSS injetado para ocultar a interface padrão do Streamlit
                 String js =
                         "var style = document.createElement('style'); " +
                         "style.type='text/css'; " +
@@ -130,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
         // Carrega o app Streamlit
         webView.loadUrl("https://financassalao-touzyzgcrwmkxmbskyxz9k.streamlit.app/");
 
-        // Handler compatível com Java 7/8
+        // Timeout limite para ocultar a splash screen
         new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
             @Override
             public void run() {
