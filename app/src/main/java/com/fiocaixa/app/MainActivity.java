@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private static final String APP_URL =
-            "https://SEU-APP.onrender.com";
+            "https://fioecaixa.onrender.com";
 
 
     @Override
