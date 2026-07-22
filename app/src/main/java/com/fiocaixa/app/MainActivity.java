@@ -2,6 +2,8 @@ package com.fiocaixa.app;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -14,6 +16,7 @@ public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
     private ImageView splashImage;
+    private boolean isSplashHidden = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setBuiltInZoomControls(false);
         webSettings.setDisplayZoomControls(false);
         webSettings.setSupportZoom(false);
+        webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
         // Configura o comportamento ao carregar
         webView.setWebViewClient(new WebViewClient() {
@@ -53,10 +57,8 @@ public class MainActivity extends AppCompatActivity {
 
                 view.evaluateJavascript(js, null);
 
-                // Oculta a capa/splash quando a página termina de carregar
-                if (splashImage != null) {
-                    splashImage.setVisibility(View.GONE);
-                }
+                // Oculta a capa/splash assim que a página termina de carregar
+                hideSplash();
             }
         });
 
@@ -72,8 +74,23 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(rootLayout);
 
-        // Substitua abaixo pela URL do seu Streamlit
+        // Carrega a URL oficial do seu Streamlit
         webView.loadUrl("https://financassalao-blazvouwtjau5y667nrlrd.streamlit.app/");
+
+        // 3. Trava de segurança: remove a logo após 4 segundos para o sistema aparecer obrigatoriamente
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                hideSplash();
+            }
+        }, 4000);
+    }
+
+    private void hideSplash() {
+        if (splashImage != null && !isSplashHidden) {
+            isSplashHidden = true;
+            splashImage.setVisibility(View.GONE);
+        }
     }
 
     // Garante que o botão voltar navegue dentro do sistema em vez de fechar o app
