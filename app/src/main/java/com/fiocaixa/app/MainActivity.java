@@ -12,10 +12,12 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceError;
 import android.webkit.WebChromeClient;
 
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -38,13 +40,14 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
         webSettings.setDatabaseEnabled(true);
+        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT); // Melhora o tempo de carregamento
         webSettings.setBuiltInZoomControls(false);
         webSettings.setDisplayZoomControls(false);
         webSettings.setSupportZoom(false);
-        webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         webSettings.setSupportMultipleWindows(true);
 
-        // Controle de links dentro do WebView
+        // Controle de navegação e erros
         webView.setWebViewClient(new WebViewClient() {
 
             @Override
@@ -58,56 +61,42 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                super.onReceivedError(view, request, error);
+                // Evita que erros em recursos secundários (imagens/scripts) travem a tela
+                if (request.isForMainFrame()) {
+                    Toast.makeText(MainActivity.hashCode(), "Erro ao carregar. Verifique sua conexão.", Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
 
-                // CSS injetado para ocultar a interface padrão do Streamlit
+                // Oculta barras do Streamlit via CSS sem necessitar de loop contínuo
                 String js =
                         "var style = document.createElement('style'); " +
                         "style.type='text/css'; " +
                         "style.innerHTML='" +
-                        "header, footer, #MainMenu," +
-                        "[data-testid=\"stHeader\"]," +
-                        "[data-testid=\"stToolbar\"]," +
-                        "[data-testid=\"stStatusWidget\"]," +
-                        "[data-testid=\"stDecoration\"]," +
-                        "div[class*=\"stAppToolbar\"]," +
-                        "div[class*=\"viewerBadge\"]," +
-                        "div[class*=\"styles_viewerBadge\"]," +
-                        ".viewerBadge_link," +
-                        ".stApp > header {" +
-                        "display:none!important;" +
-                        "visibility:hidden!important;" +
-                        "height:0!important;" +
-                        "}';" +
-                        "document.head.appendChild(style);" +
-
-                        "setInterval(function(){" +
-                        "var elements=document.querySelectorAll(" +
-                        "'header, footer, [data-testid=\"stHeader\"]," +
-                        "[data-testid=\"stToolbar\"]," +
-                        "div[class*=\"stAppToolbar\"]," +
-                        "div[class*=\"viewerBadge\"]');" +
-                        "elements.forEach(function(el){" +
-                        "el.style.display='none';" +
-                        "});" +
-                        "},200);";
+                        "header, footer, #MainMenu, " +
+                        "[data-testid=\"stHeader\"], " +
+                        "[data-testid=\"stToolbar\"], " +
+                        "[data-testid=\"stStatusWidget\"], " +
+                        "[data-testid=\"stDecoration\"], " +
+                        "div[class*=\"stAppToolbar\"], " +
+                        "div[class*=\"viewerBadge\"], " +
+                        ".viewerBadge_link { display:none !important; visibility:hidden !important; height:0 !important; }';" +
+                        "document.head.appendChild(style);";
 
                 view.evaluateJavascript(js, null);
                 hideSplash();
             }
         });
 
-        // Suporte a abertura de janelas popup e links externos
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
-            public boolean onCreateWindow(WebView view,
-                                          boolean isDialog,
-                                          boolean isUserGesture,
-                                          android.os.Message resultMsg) {
-
+            public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, android.os.Message resultMsg) {
                 WebView tempWebView = new WebView(MainActivity.this);
-
                 tempWebView.setWebViewClient(new WebViewClient() {
                     @Override
                     public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest request) {
@@ -125,7 +114,6 @@ public class MainActivity extends AppCompatActivity {
                 WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
                 transport.setWebView(tempWebView);
                 resultMsg.sendToTarget();
-
                 return true;
             }
         });
@@ -141,19 +129,13 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(rootLayout);
 
-        // Carrega a URL do Streamlit
+        // Carrega o app Streamlit
         webView.loadUrl("https://financassalao-blazvouwtjau5y667nrlrd.streamlit.app/?embed=true");
 
-        // Timeout de segurança para remover a Splash Screen após 4 segundos
-        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                hideSplash();
-            }
-        }, 4000);
+        // Timeout limite para ocultar a splash screen
+        new Handler(Looper.getMainLooper()).postDelayed(this::hideSplash, 4000);
     }
 
-    // Trata links de redes sociais, telefone e mapas
     private boolean abrirLink(String url) {
         if (url.startsWith("https://wa.me")
                 || url.startsWith("https://api.whatsapp.com")
@@ -173,7 +155,6 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    // Trata a abertura de links externos criados por novas janelas
     private void abrirLinkExterno(String url) {
         try {
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
@@ -183,7 +164,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Oculta a tela de Splash
     private void hideSplash() {
         if (splashImage != null && !isSplashHidden) {
             isSplashHidden = true;
@@ -191,7 +171,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Trata o botão de voltar do dispositivo
     @Override
     public void onBackPressed() {
         if (webView != null && webView.canGoBack()) {
