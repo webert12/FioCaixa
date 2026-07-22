@@ -128,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(rootLayout);
 
         // Carrega o app Streamlit
-        webView.loadUrl("https://financassalao-blazvouwtjau5y667nrlrd.streamlit.app/?embed=true");
+        webView.loadUrl("https://financassalao-touzyzgcrwmkxmbskyxz9k.streamlit.app/");
 
         // Handler compatível com Java 7/8
         new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
