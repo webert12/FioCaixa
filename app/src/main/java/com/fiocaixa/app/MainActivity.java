@@ -19,7 +19,7 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebViewClient(new WebViewClient());
         
         // SUBSTITUA O LINK ABAIXO PELO LINK DO SEU SISTEMA (Streamlit / Web)
-        webView.loadUrl("https://github.com/webert12/FioCaixa");
+        webView.loadUrl("https://financassalao-blazvouwtjau5y667nrlrd.streamlit.app/");
         
         setContentView(webView);
     }
