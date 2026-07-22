@@ -43,12 +43,14 @@ public class MainActivity extends AppCompatActivity {
                 super.onPageFinished(view, url);
 
                 // Injeta CSS para esconder o topo, rodapé e ícones do Streamlit/GitHub
-                String css = "header[data-testid=\"stHeader\"], " +
-                             "footer, " +
-                             "#MainMenu, " +
-                             "[data-testid=\"stToolbar\"], " +
-                             "[data-testid=\"stDecoration\"], " +
-                             ".stApp > header { display: none !important; visibility: hidden !important; }";
+                String css = "header, footer, #MainMenu, " +
+             "[data-testid=\"stHeader\"], " +
+             "[data-testid=\"stToolbar\"], " +
+             "[data-testid=\"stStatusWidget\"], " +
+             "[data-testid=\"stDecoration\"], " +
+             "div[class*=\"stAppToolbar\"], " +
+             "div[class*=\"viewerBadge\"], " +
+             ".stApp > header { display: none !important; visibility: hidden !important; }";
 
                 String js = "var style = document.createElement('style'); " +
                             "style.type = 'text/css'; " +
