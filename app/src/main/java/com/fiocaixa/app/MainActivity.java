@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 
 import android.content.Intent;
 import android.content.ActivityNotFoundException;
@@ -46,6 +48,17 @@ public class MainActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
 
+        // --- CÓDIGO NOVO: MODO FULLSCREEN (TELA CHEIA) ---
+        // 1. Esconde a Action Bar (Barra de título com nome do app)
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().hide();
+        }
+        // 2. Esconde a Status Bar (Bateria, Wi-Fi, Relógio)
+        getWindow().setFlags(
+                WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN
+        );
+        // -------------------------------------------------
 
 
         FrameLayout rootLayout =
